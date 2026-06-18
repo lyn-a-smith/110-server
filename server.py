@@ -1,4 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify, request
+import uuid
+
 
 app = Flask(__name__) # Instance of Flask
 
@@ -59,21 +61,21 @@ def get_user():
 # ---- Products -----
 products = [
     {
-        "id": 1,
+        "id": "1",
         "title": "Nintendo Switch",
         "price": 499.99,
         "category": "Electronics",
         "image": "https://picsum.photos/300/200?random=1"
     },
     {
-        "id": 2,
+        "id": "2",
         "title": "Smart Refrigerator",
         "price": 999.99,
         "category": "Kitchen",
         "image": "https://picsum.photos/300/200?random=1"
     },
     {
-        "id": 3,
+        "id": "3",
         "title": "Blutooth Speaker",
         "price": 79.99,
         "category": "Electronics",
@@ -88,8 +90,53 @@ def get_products():
     return products
 
 
+# ---- Path Parameters ----
+# http://127.0.0.1:5000/greet/lyn
+@app.route("/greet/<string:name>", methods=["GET"])
+def say_hello(name):
+    # logic here
+    return jsonify({"message": f"Hello {name}"}) 
+
+
+# http://127.0.0.1:5000/api/products/#
+@app.route("/api/products/<string:id>", methods=["GET"])
+def get_product_by_id(id):
+    print(f"product id: {id}")
+
+    for product in products:
+        if product["id"] == id:
+            return jsonify({
+                "success": True,
+                "message": "Product retrieved successfully",
+                "data": product
+            }), 200
+    
+    return jsonify({
+        "success": False,
+        "message": f"Product with product id: {id} not found",
+    }), 404
+    
+
+
+# POST http://127.0.0.1:5000/api/products
+@app.route("/api/products", methods=["POST"])
+def create_product():
+    print(f"request informatiom: {request.get_json()}")
+    new_product = request.get_json()
+    new_product["id"] = str(uuid.uuid4())
+    print(new_product)
+
+    products.append(new_product)
+
+    return jsonify({
+        "success": True,
+        "message": "Product created successfully",
+    }), 201
+    
+
+
 # ---- Coupons ----
-coupons = [
+coupons = [ 
   {"_id": 1, "code": "WELCOME10", "discount": 10},
   {"_id": 2, "code": "SPOOKY25", "discount": 25},
   {"_id": 3, "code": "VIP50", "discount": 50}
@@ -106,6 +153,34 @@ def get_coupons():
 @app.route("/api/coupons/count", methods=["GET"])
 def get_coupon_count():
     return {"count": len(coupons)}
+
+
+# POST http://127.0.0.1:5000/api/coupons
+@app.route("/api/coupons", methods=["POST"])
+def create_coupon():
+    new_coupon = request.get_json()
+    new_coupon["_id"] = len(coupons) + 1
+
+    print(new_coupon)
+
+    coupons.append(new_coupon)
+    return jsonify({
+        "success": True,
+        "message": "Coupon created successfully",
+    }), 201
+
+
+# GET http://127.0.0.1:5000/api/coupons/<int:id>
+@app.route("/api/coupons/<int:id>", methods=["GET"])
+def get_coupon_by_id(id):
+    for coupon in coupons:
+        if coupon["_id"] == id:
+            return jsonify({
+                "success": True,
+                "message": "Coupon retrieved successfully",
+                "data": coupon
+            }), 200
+
 
 
 if __name__ == '__main__':
